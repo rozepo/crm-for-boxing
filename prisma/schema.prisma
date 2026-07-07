@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  CANCELED
+  COMPLETED
+}
+
+enum PassType {
+  SINGLE
+  PACK
+  UNLIMITED
+}
+
+enum BookingStatus {
+  BOOKED
+  PRESENT
+  NO_SHOW
+  CANCELED
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model Trainer {
+  id        Int             @id @default(autoincrement())
+  name      String
+  phone     String?
+  bio       String?
+  templates ClassTemplate[]
+  sessions  Session[]
+  recurringSchedules RecurringSchedule[]
+  sessionLinks SessionTrainer[]
+  recurringLinks RecurringScheduleTrainer[]
+}
+
+model RecurringSchedule {
+  id         Int                 @id @default(autoincrement())
+  frequency  RecurrenceFrequency
+  interval   Int                 @default(1)
+  weekDays   String?
+  monthlyMode String? 
+  monthDay   Int?
+  nthWeek    Int?
+  nthWeekday Int?
+  startsOn   DateTime
+  endsOn     DateTime?
+  startTime  String
+  endTime    String?
+  title      String?
+  description String?
+  level      Level
+  capacity   Int                 @default(12)
+  active     Boolean             @default(true)
+  trainerId  Int
+  trainer    Trainer             @relation(fields: [trainerId], references: [id])
+  sessions   Session[]
+  createdAt  DateTime            @default(now())
+  trainerLinks RecurringScheduleTrainer[]
+}
+
+model ClassTemplate {
+  id        Int       @id @default(autoincrement())
+  level     Level
+  dayOfWeek Int
+  startTime String
+  endTime   String?
+  capacity  Int       @default(12)
+  trainerId Int
+  trainer   Trainer   @relation(fields: [trainerId], references: [id])
+  sessions  Session[]
+}
+
+model Session {
+  id              Int             @id @default(autoincrement())
+  classTemplateId Int?
+  recurringScheduleId Int?
+  date            DateTime
+  startTime       String
+  endTime         String?
+  title           String?
+  description     String?
+  level           Level
+  capacity        Int             @default(12)
+  status          SessionStatus   @default(SCHEDULED)
+  trainerId       Int
+  trainer         Trainer         @relation(fields: [trainerId], references: [id])
+  classTemplate   ClassTemplate?  @relation(fields: [classTemplateId], references: [id])
+  recurringSchedule RecurringSchedule? @relation(fields: [recurringScheduleId], references: [id])
+  bookings        Booking[]
+  trainerLinks    SessionTrainer[]
+
+  @@index([date])
+  @@unique([recurringScheduleId, date])
+}
+
+model Client {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String    @unique
+  level     Level     @default(BEGINNER)
+  isFree    Boolean   @default(false)
+  note      String?
+  createdAt DateTime  @default(now())
+  passes    Pass[]
+  bookings  Booking[]
+}
+
+model SessionTrainer {
+  sessionId Int
+  trainerId Int
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  trainer   Trainer @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, trainerId])
+  @@index([trainerId])
+}
+
+model RecurringScheduleTrainer {
+  recurringScheduleId Int
+  trainerId           Int
+  recurringSchedule   RecurringSchedule @relation(fields: [recurringScheduleId], references: [id], onDelete: Cascade)
+  trainer             Trainer           @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+
+  @@id([recurringScheduleId, trainerId])
+  @@index([trainerId])
+}
+
+model Pass {
+  id          Int       @id @default(autoincrement())
+  clientId    Int
+  type        PassType
+  remaining   Int?
+  validUntil  DateTime?
+  purchasedAt DateTime  @default(now())
+  priceRub    Int
+  paidCash    Boolean   @default(true)
+  client      Client    @relation(fields: [clientId], references: [id])
+  bookings    Booking[]
+
+  @@index([clientId])
+}
+
+model Booking {
+  id        Int           @id @default(autoincrement())
+  clientId  Int
+  sessionId Int
+  status    BookingStatus @default(BOOKED)
+  passId    Int?
+  createdAt DateTime      @default(now())
+  client    Client        @relation(fields: [clientId], references: [id])
+  session   Session       @relation(fields: [sessionId], references: [id])
+  pass      Pass?         @relation(fields: [passId], references: [id])
+
+  @@unique([clientId, sessionId])
+  @@index([sessionId])
+}
