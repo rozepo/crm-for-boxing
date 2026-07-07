@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed-pg.ts",
     "db:studio": "prisma studio",
     "test:core": "tsx scripts/test-core.ts"
   },
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

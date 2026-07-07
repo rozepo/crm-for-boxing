@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { markPresent } from "../src/lib/attendance";
@@ -5,12 +6,8 @@ import { createBooking } from "../src/lib/booking";
 import { createRecurringSchedule } from "../src/lib/recurrence";
 
 const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not configured");
-}
-
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+if (!connectionString) throw new Error("DATABASE_URL is not configured");
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString, max: 2 }) });
 
 async function main() {
   const trainer = await prisma.trainer.findFirstOrThrow();
